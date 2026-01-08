@@ -1,7 +1,7 @@
 <?php
 /**
  * Viewfinder - Digital Sovereignty Quiz
- * Features: 21 Questions, Randomized Domains & Questions, Certificate Generation
+ * Features: Randomized Domains/Questions, Full Question Display in Results
  */
 
 $domains = [
@@ -16,7 +16,7 @@ $domains = [
     "tech" => [
         "title" => "Technical Sovereignty",
         "questions" => [
-            "t1" => ["s" => "Open standards can help reduce vendor lock-in.", "a" => "true", "e" => "Standards enable easier workload and data portability between providers."],
+            "t1" => ["s" => "Open standards (S3/SQL) help reduce vendor lock-in.", "a" => "true", "e" => "Standards enable easier workload and data portability between providers."],
             "t2" => ["s" => "Proprietary 'Serverless' functions are easily portable.", "a" => "false", "e" => "These functions usually rely on provider-specific APIs that don't exist elsewhere."],
             "t3" => ["s" => "Using a 'Single-Pane-of-Glass' tool from a vendor reduces technical lock-in.", "a" => "false", "e" => "Proprietary management layers often become the most difficult thing to replace."]
         ]
@@ -63,27 +63,19 @@ $domains = [
     ]
 ];
 
-/** * RANDOMIZATION LOGIC 
- */
+// Randomization Logic
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    // 1. Shuffle the Questions within each domain
     foreach ($domains as $key => $domain) {
         $q_keys = array_keys($domain['questions']);
         shuffle($q_keys);
         $randomizedQ = [];
-        foreach ($q_keys as $k) {
-            $randomizedQ[$k] = $domain['questions'][$k];
-        }
+        foreach ($q_keys as $k) { $randomizedQ[$k] = $domain['questions'][$k]; }
         $domains[$key]['questions'] = $randomizedQ;
     }
-    
-    // 2. Shuffle the Domains themselves
     $d_keys = array_keys($domains);
     shuffle($d_keys);
     $randomizedD = [];
-    foreach ($d_keys as $dk) {
-        $randomizedD[$dk] = $domains[$dk];
-    }
+    foreach ($d_keys as $dk) { $randomizedD[$dk] = $domains[$dk]; }
     $domains = $randomizedD;
 }
 
@@ -97,7 +89,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $isCorrect = ($uAns === $qData['a']);
             if ($isCorrect) { $total_correct++; $d_correct++; }
             $total_q++; $d_total++;
-            $results[$dData['title']]['items'][] = ["is_correct" => $isCorrect, "exp" => $qData['e'], "s" => $qData['s']];
+            // Store the original question 's' in the results array
+            $results[$dData['title']]['items'][] = [
+                "is_correct" => $isCorrect, 
+                "exp" => $qData['e'], 
+                "s" => $qData['s']
+            ];
         }
         $results[$dData['title']]['score'] = round(($d_correct / $d_total) * 100);
     }
@@ -121,27 +118,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .external-logo { margin-bottom: 20px; max-width: 200px; }
         .external-logo img { width: 100%; height: auto; display: block; }
         .app-container { width: 95%; max-width: 650px; background-color: var(--card); border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); padding: 30px; color: var(--text-main); box-sizing: border-box; }
+        
         .step { display: none; }
         .step.active { display: block; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .progress-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #d1d5db; transition: all 0.3s; }
         .dot.active { background: var(--primary); transform: scale(1.3); }
+
         .q-text { font-weight: 600; margin-bottom: 8px; font-size: 0.95rem; color: var(--text-main); }
         .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .btn-group input { display: none; }
         .btn-group label { flex: 1; text-align: center; padding: 12px; border: 2px solid #e5e7eb; border-radius: 10px; cursor: pointer; font-weight: 700; background: white; color: var(--text-muted); transition: 0.2s; }
         .btn-group input:checked + label { background: var(--primary); color: white; border-color: var(--primary); }
+
         .nav-btns { display: flex; justify-content: space-between; margin-top: 5px; }
         button { padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; }
         .btn-next { background: var(--primary); color: white; }
         .btn-prev { background: #e5e7eb; color: var(--text-muted); }
+
         .results-header { text-align: center; margin-bottom: 10px; }
         .score-row { display: flex; align-items: center; justify-content: center; gap: 15px; }
         .score-circle { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
         .readiness-badge { padding: 6px 14px; border-radius: 10px; color: white; font-weight: 800; }
-        .results-scroll { max-height: 180px; overflow-y: auto; padding-right: 10px; margin-top: 10px; border-top: 1px solid #e5e7eb; }
-        .res-card { padding: 8px; border-radius: 8px; margin-top: 8px; font-size: 0.75rem; border-left: 4px solid; background: white; }
+
+        .results-scroll { max-height: 220px; overflow-y: auto; padding-right: 10px; margin-top: 10px; border-top: 1px solid #e5e7eb; }
+        .res-domain-title { font-size: 0.85rem; color: var(--primary); margin: 15px 0 5px 0; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .res-card { padding: 12px; border-radius: 10px; margin-top: 8px; font-size: 0.8rem; border-left: 5px solid; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .res-card.wrong { border-color: var(--error); }
+        .res-card.correct { border-color: var(--success); }
+        
+        .q-summary { font-style: italic; color: var(--text-muted); display: block; margin-bottom: 5px; line-height: 1.3; }
         .cert-section { margin-top: 15px; padding: 15px; background: white; border-radius: 12px; border: 1px dashed var(--primary); text-align: center; }
     </style>
 </head>
@@ -158,7 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <?php $step=0; foreach ($domains as $dKey => $dData): ?>
                 <div class="step <?php echo $step==0?'active':''; ?>" id="step_<?php echo $step; ?>">
                     <h2 style="margin:0; color:var(--primary); text-align:center; font-size: 1.2rem;"><?php echo $dData['title']; ?></h2>
-                    <p style="font-size: 0.75rem; color:var(--text-muted); text-align:center; margin-bottom: 15px;">Domain <?php echo $step+1; ?> of 7</p>
+                    <p style="font-size: 0.75rem; color:var(--text-muted); text-align:center; margin-bottom: 15px;">Step <?php echo $step+1; ?> of 7</p>
                     <?php foreach ($dData['questions'] as $qKey => $qData): ?>
                         <div class="q-text"><?php echo $qData['s']; ?></div>
                         <div class="btn-group">
@@ -178,12 +186,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <div class="readiness-badge" style="background: <?php echo $readiness['Color']; ?>;"><?php echo $readiness['Icon']; ?> <?php echo $readiness['Level']; ?></div>
             </div>
         </div>
+        
         <div class="results-scroll">
             <?php foreach ($results as $title => $data): ?>
-                <div style="margin-top: 10px;"><h4 style="margin:0; font-size: 0.8rem; color: var(--primary);"><?php echo $title; ?> (<?php echo $data['score']; ?>%)</h4>
-                <?php foreach ($data['items'] as $item): ?><div class="res-card <?php echo $item['is_correct']?'':'wrong'; ?>" style="border-color:<?php echo $item['is_correct']?'var(--success)':'var(--error)';?>"><strong><?php echo $item['is_correct']?'✓':'✗'; ?></strong> <?php echo $item['exp']; ?></div><?php endforeach; ?></div>
+                <div class="res-domain-title"><?php echo $title; ?> (<?php echo $data['score']; ?>%)</div>
+                <?php foreach ($data['items'] as $item): ?>
+                    <div class="res-card <?php echo $item['is_correct'] ? 'correct' : 'wrong'; ?>">
+                        <span class="q-summary">"<?php echo $item['s']; ?>"</span>
+                        <strong><?php echo $item['is_correct'] ? '✓ Correct' : '✗ Incorrect'; ?>:</strong> <?php echo $item['exp']; ?>
+                    </div>
+                <?php endforeach; ?>
             <?php endforeach; ?>
         </div>
+
         <div class="cert-section">
             <form action="certificate.php" method="GET" target="_blank">
                 <input type="hidden" name="score" value="<?php echo $final_score; ?>"><input type="hidden" name="level" value="<?php echo $readiness['Level']; ?>"><input type="hidden" name="ts" value="<?php echo time(); ?>">
