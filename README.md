@@ -62,7 +62,7 @@ podman build -t dig-sov-quiz .
 
 2. Run the container:
 ```bash
-podman run -d -p 8080:8080 --name sovereignty-quiz dig-sov-quiz
+podman run -p 8080:8080 --name sovereignty-quiz dig-sov-quiz
 ```
 
 3. Access the application:
@@ -70,11 +70,6 @@ podman run -d -p 8080:8080 --name sovereignty-quiz dig-sov-quiz
 http://localhost:8080
 ```
 
-4. Stop and remove the container:
-```bash
-podman stop sovereignty-quiz
-podman rm sovereignty-quiz
-```
 
 **Container Notes:**
 - The application runs on port 8080 inside the container
